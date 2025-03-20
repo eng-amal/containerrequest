@@ -1,0 +1,31 @@
+nav {
+    img {
+        margin-right: 10px;
+    }
+
+    .btn {
+        margin-left: 25px;
+    }
+}
+
+.sidenav svg {
+
+    margin-left: 10px;
+}
+
+
+.accordion-button {
+    &.homeBtn {
+        text-align: right;
+    }
+
+    &::after {
+        margin-right: auto;
+        margin-left: 0;
+    }
+}
+
+.main-content {
+    margin-right: 350px;
+    margin-left: 0 !important
+}
