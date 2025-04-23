@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\account;
 use Illuminate\Support\Facades\DB;
+use TCPDF;
 class accountcontroller extends Controller
 {
     public function getaccounts(Request $request)
@@ -144,6 +145,76 @@ class accountcontroller extends Controller
         )
         ->get();
         return view('accountbalance', compact('accounts'));
+    }
+    public function showaccountReport() {
+        $accounts = \DB::table('account as a')
+        ->leftJoin('account as p', 'a.parentid', '=', 'p.id')
+        ->select(
+            'a.id',
+            'a.name',
+            'a.enname',
+            'a.code',
+            'a.type',
+            \DB::raw('
+                CASE 
+                    WHEN a.type = 1 THEN "Master Account"
+                    WHEN a.type = 2 THEN "Sub Account"
+                    WHEN a.type = 3 THEN "Sub2 Account"
+                    ELSE "Unknown"
+                END as type_label
+            '),
+            'p.name as parent_name', // parent name if exists
+            'a.inamount',
+            'a.outamount',
+            'a.balance'
+        )
+        ->get();
+        $this->generatePDFReport($accounts);
+    }
+    public function generatePDFReport($accounts) {
+        // إنشاء كائن TCPDF
+        $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);
+        
+        // إعدادات الوثيقة
+        $pdf->SetCreator(PDF_CREATOR);
+        $pdf->SetTitle('تقرير الحسابات');
+        $pdf->SetFont('freeserif', '', 14);
+        $pdf->setRTL(true);
+
+        // إضافة صفحة
+        $pdf->AddPage();
+    
+        // عنوان التقرير
+        $pdf->SetFont('freeserif', 'B', 16);
+        $pdf->Cell(0, 10, 'تقرير الحسابات ', 0, 1, 'C');
+    
+        // إعداد الخط
+        $pdf->SetFont('freeserif', '', 12);
+    
+        // إضافة محتويات التقرير
+        $pdf->Ln(10); // مسافة بين العنوان والمحتوى
+    
+        // جدول الحاويات
+        $pdf->Cell(20, 10, ' الاسم', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'الكود', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'النوع', 1, 0, 'C'); // إضافة عمود المدينة والشارع
+        $pdf->Cell(20, 10, 'الاب', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'دائن', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'مدين', 1, 0, 'C');
+        $pdf->Cell(20, 10, 'رصيد', 1, 1, 'C');
+        $pdf->SetFont('freeserif', '', 8);
+        foreach ($accounts as $account) {
+            $pdf->Cell(20, 10, $account->name, 1, 0, 'C');
+            $pdf->Cell(20, 10, $account->code, 1, 0, 'C');
+            $pdf->Cell(20, 10, $account->type_label, 1, 0, 'C'); // المدينة والشارع
+            $pdf->Cell(20, 10, $account->parent_name, 1, 0, 'C');
+            $pdf->Cell(20, 10, $account->outamount, 1, 0, 'C');
+            $pdf->Cell(20, 10, $account->inamount, 1, 0, 'C');
+            $pdf->Cell(20, 10, $account->balance, 1, 1, 'C');
+        }
+    
+        // إخراج التقرير
+        $pdf->Output('account_report.pdf', 'I');
     }
 
 }

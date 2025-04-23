@@ -50,9 +50,9 @@
         <table class="table table-hover table-bordered">
             <thead class="table-primary">
                 <tr>
-                    <th>{{ __('contreq.Id') }}</th>
-                    <th>{{ __('contreq.name') }}</th>
-                    <th>{{ __('contreq.enname') }}</th>
+                    <th width="50px">{{ __('contreq.Id') }}</th>
+                    <th width="100px">{{ __('contreq.name') }}</th>
+                    <th width="100px">{{ __('contreq.enname') }}</th>
                     <th width="280px">{{ __('contreq.action') }}</th>
                 </tr>
             </thead>
@@ -73,6 +73,8 @@
                      // Find the latest residence record for the employee
                      $residence = isset($stays[$employee->id]) ? $stays[$employee->id] : null;
                      $expiryDate = $residence ? \Carbon\Carbon::parse($residence->todate) : null;
+                     $drivercard = isset($drivecards[$employee->id]) ? $drivecards[$employee->id] : null;
+                     $expiryDated = $drivercard ? \Carbon\Carbon::parse($drivercard->todate) : null;
                      $oneMonthLater = \Carbon\Carbon::now()->addMonth(); // One month from today
                        @endphp
                         <td >
@@ -101,6 +103,18 @@
                                 <img src="{{ asset('images/stay2.JPG') }}" alt="view" width="20" height="20">
                                 </a>
                                 @endif
+                                @if ($expiryDated && $expiryDated->lessThanOrEqualTo($oneMonthLater))
+                                <a class="btn" title="renew drivercard" href="{{ route('drivercardindex', $employee->id) }}"> 
+                                <img src="{{ asset('images/stay4.JPG') }}" alt="view" width="20" height="20">
+                                </a>
+                                @else
+                                <a class="btn" title="drivercard" href="{{ route('drivercardindex', $employee->id) }}"> 
+                                <img src="{{ asset('images/stay2.JPG') }}" alt="view" width="20" height="20">
+                                </a>
+                                @endif
+                                <a class="btn" title="Evaluation" href="{{ route('employee.evaluation', $employee->id) }}"> 
+                                <img src="{{ asset('images/eva.JPG') }}" alt="evaluation" width="20" height="20">
+                                </a>
                                 @csrf
                                 @method('DELETE')
                              <button type="submit" class="btn">
@@ -118,4 +132,26 @@
 
   </main>
 </div>
+@endsection
+@section('scripts')
+  <!-- Main JS File -->
+  
+<script>
+        // Function to toggle the language between English and Arabic
+        function toggleLanguage() {
+            let currentLang = "{{ app()->getLocale() }}"; // Get current language (English or Arabic)
+            let newLang = currentLang === 'en' ? 'ar' : 'en'; // Toggle between English and Arabic
+
+            // Add the new language to the form as a hidden input
+            let form = document.getElementById('language-form');
+            let langInput = document.createElement('input');
+            langInput.type = 'hidden';
+            langInput.name = 'lang';
+            langInput.value = newLang;
+            form.appendChild(langInput);
+
+            // Submit the form to reload the page with the new language
+            form.submit();
+        }
+    </script>
 @endsection

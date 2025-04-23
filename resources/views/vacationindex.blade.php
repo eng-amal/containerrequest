@@ -8,8 +8,6 @@
 <!-- Starter Section Section -->
     <section id="starter-section" class="starter-section section">
 
-      
-
       <div class="container mt-2">
       <div class="pull-left mb-2">
         <h2 class="text-color">{{ __('contreq.pagename38') }}</h2>
@@ -61,4 +59,26 @@
 
   </main>
 </div>
+@endsection
+@section('scripts')
+  <!-- Main JS File -->
+  
+<script>
+        // Function to toggle the language between English and Arabic
+        function toggleLanguage() {
+            let currentLang = "{{ app()->getLocale() }}"; // Get current language (English or Arabic)
+            let newLang = currentLang === 'en' ? 'ar' : 'en'; // Toggle between English and Arabic
+
+            // Add the new language to the form as a hidden input
+            let form = document.getElementById('language-form');
+            let langInput = document.createElement('input');
+            langInput.type = 'hidden';
+            langInput.name = 'lang';
+            langInput.value = newLang;
+            form.appendChild(langInput);
+
+            // Submit the form to reload the page with the new language
+            form.submit();
+        }
+    </script>
 @endsection

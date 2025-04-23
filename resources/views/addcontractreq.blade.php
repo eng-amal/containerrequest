@@ -52,6 +52,7 @@
         
         <form action="{{ route('storecontactreq') }}" method="POST" enctype="multipart/form-data" class="form-group p-3 flex row">
             @csrf
+            <input id="reqid" name="reqid" hidden value="{{ old('reqid') }}">
             <input type="hidden" name="contractid" value="{{ $contract->id }}">
                     <div class="w-25 p-3">
                         <strong>{{ __('contreq.reqdate') }}</strong>
@@ -149,19 +150,22 @@
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>
-                
                     <div class="w-50 p-3">
                         <strong>{{ __('contreq.reqtypeid') }}</strong>
-                        <select id="reqtypeid" class="form-select" name="reqtypeid" value="{{ old('reqtypeid') }}" class="form-control">
+                        <select id="reqtypeid" class="form-select" name="reqtypeid">
                          <option value="" selected="selected">{{ __('contreq.reqtypeid') }}</option>
-                         <option value="1">type1</option>
-                         <option value="2">type2</option>
+                         <option value="1" {{ old('reqtypeid') == 1 ? 'selected' : '' }}>{{ __('contreq.reqtype1') }}</option>
+                        <option value="2" {{ old('reqtypeid') == 2 ? 'selected' : '' }}>{{ __('contreq.reqtype2') }}</option>
                         </select>
                         
                         @error('reqtypeid')
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>
+                    <div class="w-25 p-3">   
+                     <a href="#" id="openPopup" class="btn btn-primary">Select Request</a>
+                    </div>
+                    
                     
                     
                     <div class="row flex">
@@ -206,6 +210,33 @@
                 <button type="submit" class="btn btn-outline-primary">{{ __('contreq.submit') }}</button></div>
             
         </form>
+        <div class="modal fade" id="requestModal" tabindex="-1" aria-labelledby="requestModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="requestModalLabel">Select Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="searchInput" class="form-control mb-2" placeholder="Search by Name or Mobile">
+
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Customer Name</th>
+              <th>Mobile No</th>
+              <th>Request Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="requestTable">
+            <!-- Data will be inserted here via jQuery -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
     </div>
 
    
@@ -233,8 +264,80 @@
             form.submit();
         }
     </script>
+<script>
+$(document).ready(function () {
+    // Open popup and load data
+    $("#openPopup").click(function () {
+        $.ajax({
+            url: "{{ route('getContactRequests') }}",
+            method: "GET",
+            data: { contractid: $("input[name='contractid']").val() },
+            success: function (data) {
+                console.log("AJAX Response:", data);
+                let tableContent = "";
+                if (data.length === 0) {
+                    tableContent = `<tr><td colspan="4" class="text-center">No requests found</td></tr>`;
+                } else {
+                    $.each(data, function (index, request) {
+                        tableContent += `<tr data-custname="${request.custname}" data-mobno="${request.mobno}" 
+                                            data-whatno="${request.whatno}" data-reqid="${request.id}" 
+                                            data-cost="${request.cost}" data-loc="${request.contlocation}" 
+                                            data-cityid="${request.cityid}" data-streetid="${request.streetid}" 
+                                            data-contsizeid="${request.contsizeid}">
+                                            <td>${request.custname}</td>
+                                            <td>${request.mobno}</td>
+                                            <td>${request.reqdate}</td>
+                                            <td><button class="btn btn-success select-request">Select</button></td>
+                                        </tr>`;
+                    });
+                }
+                $("#requestTable").html(tableContent);
+                $("#requestModal").modal("show");
+            }, // ✅ Fixed missing closing brace here
+            error: function (xhr, status, error) {
+                console.error("AJAX Error:", error);
+            }
+        }); // ✅ Fixed missing closing brace here
+    });
 
+    // Filter table data
+    $("#searchInput").on("keyup", function () {
+        let value = $(this).val().toLowerCase();
+        $("#requestTable tr").filter(function () {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+    });
 
+    // Select row and fill form inputs
+    $(document).on("click", ".select-request", function () {
+        let row = $(this).closest("tr");
+        $("#reqid").val(row.data("reqid"));
+        $("#requestModal").modal("hide"); // Close the modal after selection
+    });
+});
+</script>
+
+<script>
+$(document).ready(function() {
+    // Function to toggle popup link visibility
+    function togglePopupLink() {
+        let selectedValue = $("#reqtypeid").val();
+        if (selectedValue == "2") {
+            $("#openPopup").show();  // Show when option 2 is selected
+        } else {
+            $("#openPopup").hide();  // Hide for other options
+        }
+    }
+
+    // Call function when select changes
+    $("#reqtypeid").on("change", function() {
+        togglePopupLink();
+    });
+
+    // Run on page load to handle pre-selected values
+    togglePopupLink();
+});
+</script>
 <script>
 $(document).ready(function(){
     // When the first dropdown changes
@@ -275,27 +378,35 @@ $(document).ready(function(){
 });
 </script>
 <script>
-        $(document).ready(function() {
-            // Use AJAX to fetch categories
-            $.ajax({
-                url: '/get-employees', // The route to fetch data
-                method: 'GET',
-                success: function(response) {
-                    // Clear existing options
-                    $('#empid').empty();
-                    // Add a default option
-                    $('#empid').append('<option value="">Select employee:</option>');
+    $(document).ready(function() {
+        // Trigger when the date changes
+        $('#fromdate').on('change', function() {
+            const fromDate = $(this).val();
 
-                    // Loop through the categories and append them to the select element
-                    $.each(response, function(index, employee) {
-                        $('#empid').append('<option value="' + employee.id + '">' + employee.fullname + '</option>');
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching employees: ', error);
-                }
-            });
+            if (fromDate) {
+                $.ajax({
+                    url: '/get-drivers',
+                    method: 'GET',
+                    data: { requestdate: fromDate }, // send it as query param
+                    success: function(response) {
+                        $('#empid').empty();
+                        $('#empid').append('<option value="">Select employee:</option>');
+
+                        $.each(response, function(index, employee) {
+                            $('#empid').append('<option value="' + employee.id + '">' + employee.fullname + '</option>');
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching employees: ', error);
+                    }
+                });
+            } else {
+                // If date is cleared, you might want to clear the dropdown
+                $('#empid').empty();
+                $('#empid').append('<option value="">Select employee:</option>');
+            }
         });
-    </script>
+    });
+</script>
 @endsection
   

@@ -8,9 +8,11 @@ use App\Models\department;
 use App\Models\position;
 use App\Models\nationality;
 use App\Models\stay;
+use App\Models\drivercard;
 use App\Models\decision;
 use App\Models\addition;
 use App\Models\vacation;
+use App\Models\account;
 class employeecontroller extends Controller
 {
     public function getemployees(Request $request)
@@ -19,6 +21,23 @@ class employeecontroller extends Controller
         $employees = employee::all();
 
         // Return data as JSON
+        return response()->json($employees);
+    }
+    public function getdrivers(Request $request)
+    {
+        $requestDate = $request->requestdate;
+
+        // Subquery to get employee IDs who are on vacation on the request date
+        $vacationingEmployees = DB::table('vacation')
+            ->whereDate('vacdate', '<=', $requestDate)
+            ->whereRaw("DATE_ADD(vacdate, INTERVAL peroid DAY) > ?", [$requestDate])
+            ->pluck('empid');
+    
+        // Get employees with position_id = 1 who are NOT on vacation
+        $employees = Employee::where('position_id', 1)
+            ->whereNotIn('id', $vacationingEmployees)
+            ->get();
+    
         return response()->json($employees);
     }
     public function employeeindex(Request $request)
@@ -40,8 +59,14 @@ class employeecontroller extends Controller
             ->map(function ($res) {
                 return $res->first(); // Get the latest record per employee
             });
+            $drivercards = drivercard::whereIn('empid', $employees->pluck('id'))->orderBy('todate', 'desc') 
+            ->get()
+            ->groupBy('empid')
+            ->map(function ($res) {
+                return $res->first(); // Get the latest record per employee
+            });
     
-            return view('employeeindex', compact('employees','stays'));
+            return view('employeeindex', compact('employees','stays','drivercards'));
     }
     public function createemployee()
     {
@@ -62,6 +87,8 @@ class employeecontroller extends Controller
                 'enfullname' => 'required',
                 'mainsal' => 'required',
                 'empimg'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'employeeid'=> 'required',
+                'accountid' => 'required|digits_between:1,10',
             ]);
             $imagePath = null;
             if ($request->hasFile('empimg')) {
@@ -77,8 +104,9 @@ class employeecontroller extends Controller
         $departments = department::all();
         $positions = position::all();
         $nationalitys = nationality::all();
+        $accounts = account::all();
         $employee = employee::findOrFail($id);
-        return view('employeeedit',compact('employee','departments','positions','nationalitys'));
+        return view('employeeedit',compact('employee','accounts','departments','positions','nationalitys'));
     }
     public function employeeupdate(Request $request,$id)
     {
@@ -95,6 +123,8 @@ class employeecontroller extends Controller
             'enfullname' => 'required',
             'mainsal' => 'required',
             'empimg'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'employeeid'=> 'required',
+            'accountid' => 'required|digits_between:1,10',
         ]);
         $imagePath = null;
             if ($request->hasFile('empimg')) {

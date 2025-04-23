@@ -14,4 +14,33 @@ class bldehcontroller extends Controller
         // Return data as JSON
         return response()->json($bldehs);
     }
+    public function bldehindex()
+    {
+        $bldehs = bldeh::all();
+            
+            return view('bldehindex', compact('bldehs'));
+    }
+    public function createbldeh()
+    {
+       
+        return view('createbldeh');
+    }
+    public function storebldeh(Request $request)
+    {
+    $request->validate([
+                'name' => 'required',
+                'enname' => 'required',
+
+            ]);
+       
+        bldeh::create($request->post());
+        return redirect()->route('bldehindex')->with('success','bldeh has been created successfully.');
+    }
+    
+    public function destroybldeh($id)
+    {
+        $bldeh = bldeh::findOrFail($id);
+        $bldeh->delete();
+        return redirect()->route('bldehindex')->with('success','bldeh Has Been deleted successfully');;
+    }
 }

@@ -48,6 +48,13 @@
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>
+                    <div class="w-25 p-3">
+                        <strong>{{ __('contreq.employeeid') }}</strong>
+                        <input type="text" name="employeeid" readonly value="{{ $employee->employeeid }}" class="form-control" placeholder="{{ __('contreq.employeeid') }}">
+                        @error('employeeid')
+                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
+                        @enderror
+                    </div>
                     <div class="row flex">
                     <div class="w-50 p-3">
                         <strong>{{ __('contreq.birthdate') }}</strong>
@@ -137,7 +144,21 @@
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>
-                   
+                    <div class="w-25 p-3">
+                        <strong>{{ __('contreq.account') }}</strong>
+                        <select id="accountid" name="accountid" class="form-select">
+                         <option value="">{{ __('contreq.account') }}</option>
+                          @foreach ($accounts as $account)
+                          <option value="{{ $account->id }}" {{ $employee->accountid == $account->id ? 'selected' : '' }}>
+                        {{ $account->name }}
+                          </option>
+                         @endforeach
+                        </select>
+                        
+                        @error('accountid')
+                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
+                        @enderror
+                    </div>
                     
                     <div class="w-25 p-3">
                 <button type="submit" class="btn btn-outline-primary">{{ __('contreq.submit') }}</button></div>

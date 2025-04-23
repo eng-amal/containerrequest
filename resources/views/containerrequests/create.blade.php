@@ -499,30 +499,38 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     </script>
-       
-       <script>
-        $(document).ready(function() {
-            // Use AJAX to fetch categories
-            $.ajax({
-                url: '/get-employees', // The route to fetch data
-                method: 'GET',
-                success: function(response) {
-                    // Clear existing options
-                    $('#empid').empty();
-                    // Add a default option
-                    $('#empid').append('<option value="">Select employee:</option>');
+    <script>
+    $(document).ready(function() {
+        // Trigger when the date changes
+        $('#fromdate').on('change', function() {
+            const fromDate = $(this).val();
 
-                    // Loop through the categories and append them to the select element
-                    $.each(response, function(index, employee) {
-                        $('#empid').append('<option value="' + employee.id + '">' + employee.fullname + '</option>');
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching employees: ', error);
-                }
-            });
+            if (fromDate) {
+                $.ajax({
+                    url: '/get-drivers',
+                    method: 'GET',
+                    data: { requestdate: fromDate }, // send it as query param
+                    success: function(response) {
+                        $('#empid').empty();
+                        $('#empid').append('<option value="">Select employee:</option>');
+
+                        $.each(response, function(index, employee) {
+                            $('#empid').append('<option value="' + employee.id + '">' + employee.fullname + '</option>');
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching employees: ', error);
+                    }
+                });
+            } else {
+                // If date is cleared, you might want to clear the dropdown
+                $('#empid').empty();
+                $('#empid').append('<option value="">Select employee:</option>');
+            }
         });
-    </script>
+    });
+</script>
+       
     
 <script>
 $(document).ready(function(){
@@ -628,7 +636,7 @@ $(document).ready(function(){
             });
         } else {
             // If no value is selected, clear the second select options
-            $('#streetid').empty().append('<option value="">Select aaa street:</option>');
+            $('#contid').empty().append('<option value="">Select aaa street:</option>');
         }
     });
 });

@@ -71,6 +71,19 @@
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>
+                    <div class="w-25 p-3">
+                        <strong>{{ __('contreq.role_id') }}</strong>
+                        <select id="role_id" class="form-select" name="role_id" value="{{ old('role_id') }}" >
+                        <option value="0" {{ old('role_id') == 0 ? 'selected' : '' }}>{{ __('contreq.role_id1') }}</option>
+                        <option value="1" {{ old('role_id') == 1 ? 'selected' : '' }}>{{ __('contreq.role_id2') }}</option>
+                        <option value="2" {{ old('role_id') == 2 ? 'selected' : '' }}>{{ __('contreq.role_id3') }}</option>
+                        <option value="3" {{ old('role_id') == 3 ? 'selected' : '' }}>{{ __('contreq.role_id4') }}</option>
+                        </select>
+                        
+                        @error('role_id')
+                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
+                        @enderror
+                    </div>
                  <div class="row flex">
                     <div class="w-25 p-3">
                     <button type="submit" class="btn btn-outline-primary">{{ __('contreq.submit') }}</button></div></div>

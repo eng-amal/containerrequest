@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\invoice;
 use App\Models\contract;
 use App\Models\bank;
+use Carbon\Carbon;
+use TCPDF;
 class invoicecontroller extends Controller
 {
     public function invoiceindex($id)
@@ -153,7 +155,7 @@ class invoicecontroller extends Controller
         'amount' => $request->input('cost'), // Transaction amount
         'type' => 3, // Assuming type 1 means "سند قبض" (Receipt Voucher)
         'reqid' => $invoice->id,
-        
+        'reason' =>'فاتورة رقم'.$invoice->id.' للعقد'.$invoice->contractid,
     ]);
         }
         if(($paytype==1)&&($ispay==2))
@@ -182,7 +184,7 @@ class invoicecontroller extends Controller
         'amount' => $request->input('cost'), // Transaction amount
         'type' => 1, // Assuming type 1 means "سند قبض" (Receipt Voucher)
         'reqid' => $invoice->id,
-        
+        'reason' =>'فاتورة رقم'.$invoice->id.' للعقد'.$invoice->contractid,
     ]);
         }
         return redirect()->route('contractindex')->with('success','invoice has been created successfully.');
@@ -257,7 +259,7 @@ class invoicecontroller extends Controller
         'amount' => $request->input('cost'), // Transaction amount
         'type' => 3, // Assuming type 1 means "سند قبض" (Receipt Voucher)
         'reqid' => $invoice->id,
-        
+        'reason' =>'فاتورة رقم'.$invoice->id.' للعقد'.$invoice->contractid,
     ]);
         }
         if(($paytype==1)&&($ispay==2))
@@ -286,6 +288,7 @@ class invoicecontroller extends Controller
         'amount' => $request->input('cost'), // Transaction amount
         'type' => 1, // Assuming type 1 means "سند قبض" (Receipt Voucher)
         'reqid' => $invoice->id,
+        'reason' =>'فاتورة رقم'.$invoice->id.' للعقد'.$invoice->contractid,
         
     ]);
         }
@@ -297,4 +300,97 @@ class invoicecontroller extends Controller
         $invoice->delete();
         return redirect()->route('invoiceindex',$invoice->contractid)->with('success','invoice Has Been deleted successfully');;
     }
+    public function showinvoiceReport(Request $request)
+    {
+        // التحقق من صحة التاريخ المدخل
+        $request->validate([
+            
+            'tdate' => 'required|date',
+        ]);
+
+        // استلام التاريخ المدخل
+        
+        $tdate = Carbon::parse($request->input('tdate'))->format('Y-m-d');
+
+        // استعلام البيانات بناءً على تاريخ fromdate
+        $salesData = invoice::where('invoicedate', '=', $tdate)  // العقد يبدأ قبل أو عند tdate
+            ->join('contract', 'invoice.contractid', '=', 'contract.id') // ربط مع جدول الحاويات
+            ->leftjoin('bank', 'invoice.bankid', '=', 'bank.id')
+            ->select(
+                'invoice.id as invoice_no',
+                'invoice.total as amount',
+                DB::raw("COALESCE(bank.name, '-') as bankname"), 
+                DB::raw("CASE 
+                    WHEN invoice.ispay = 1 THEN 'غير مدفوع' 
+                    ELSE ' مدفوع' 
+                 END as ispay_status"),
+                DB::raw("CASE 
+                    WHEN invoice.paytypeid = 1 THEN 'نقدي' 
+                    ELSE 'تحويل مصرفي' 
+                 END as pay_type"),
+                 'contract.id as contract_no',
+                'contract.custname as customer_name'
+            )
+            ->get();
+
+        // إرسال البيانات إلى دالة توليد التقرير
+        $this->generatePDFInvoicesReport($salesData,$tdate);
+    }
+
+    public function generatePDFInvoicesReport($salesData,$tdate)
+    {
+        // إنشاء كائن TCPDF
+        $pdf = new TCPDF('L', PDF_UNIT, 'A4', true, 'UTF-8', false);
+
+        // إعدادات الوثيقة
+        $pdf->SetCreator(PDF_CREATOR);
+        $pdf->SetTitle('تقرير  فواتير عقود ');
+        $pdf->SetFont('freeserif', '', 14);
+        $pdf->setRTL(true);
+
+        // إضافة صفحة
+        $pdf->AddPage();
+
+        // عنوان التقرير
+        $pdf->SetFont('freeserif', 'B', 16);
+        $pdf->Cell(0, 10, 'تقرير   فواتير عقود تاريخ  - ' .$tdate, 0, 1, 'C');
+
+        // إعداد الخط
+        $pdf->SetFont('freeserif', '', 12);
+        $pdf->Ln(10); // مسافة بين العنوان والمحتوى
+
+        // جدول المبيعات
+        $pdf->Cell(30, 10, 'رقم العقد', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'رقم الفاتورة', 1, 0, 'C');
+        $pdf->Cell(30, 10, ' المبلغ', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'مدفوع؟', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'طريقة السداد', 1, 0, 'C');
+        $pdf->Cell(30, 10, ' البنك', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'اسم الزبون', 1, 1, 'C');
+        $pdf->SetFont('freeserif', '', 9);
+        // إضافة البيانات إلى الجدول
+        
+        foreach ($salesData as $data) {
+            $pdf->Cell(30, 10, $data->contract_no, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->invoice_no, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->amount, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->ispay_status, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->pay_type, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->bankname, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->customer_name, 1, 1, 'C');
+             
+
+        }
+                // إخراج التقرير
+        $pdf->Output('invoices_report.pdf', 'I');
+    }
+    
+    public function createinvoicesreport()
+    {
+            return view('createinvoicesreport');
+            
+        
+    }
+
+
 }

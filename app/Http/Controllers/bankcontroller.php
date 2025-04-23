@@ -14,4 +14,33 @@ class bankcontroller extends Controller
         // Return data as JSON
         return response()->json($banks);
     }
+    public function bankindex()
+    {
+        $banks = bank::all();
+            
+            return view('bankindex', compact('banks'));
+    }
+    public function createbank()
+    {
+       
+        return view('createbank');
+    }
+    public function storebank(Request $request)
+    {
+    $request->validate([
+                'name' => 'required',
+                'enname' => 'required',
+
+            ]);
+       
+        bank::create($request->post());
+        return redirect()->route('bankindex')->with('success','bank has been created successfully.');
+    }
+    
+    public function destroybank($id)
+    {
+        $bank = bank::findOrFail($id);
+        $bank->delete();
+        return redirect()->route('bankindex')->with('success','bank Has Been deleted successfully');;
+    }
 }

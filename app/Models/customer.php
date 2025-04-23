@@ -9,5 +9,5 @@ class customer extends Model
 {
     public $timestamps = false;
     protected $table = 'customer';
-    protected $fillable=['fullname','phone','whatappno'];
+    protected $fillable=['fullname','phone','whatappno','balance','status','accountid'];
 }

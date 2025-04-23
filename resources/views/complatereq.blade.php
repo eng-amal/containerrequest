@@ -358,7 +358,7 @@
                 chargeToDiv.style.display = "none";
             } else if (completeRequest.checked) {
                 suspensionReasonDiv.style.display = "none";
-                if (paytype == 1 || paytype == 6) {
+                if (paytype == 1 || paytype == 6|| paytype == 5) {
                     if (remainingAmount > 0) {
                         pendingAmountDiv.style.display = "block";
                     } else {

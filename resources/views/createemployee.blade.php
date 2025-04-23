@@ -62,7 +62,13 @@
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    
+                    <div class="w-25 p-3">
+                        <strong>{{ __('contreq.employeeid') }}</strong>
+                        <input type="text" name="employeeid" value="{{ old('employeeid') }}" id="employeeid"  class="form-control" placeholder="{{ __('contreq.employeeid') }}">
+                        @error('employeeid')
+                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
+                        @enderror
+                    </div>
                    </div>
                    <div class="row flex">
                     <div class="w-25 p-3">
@@ -135,7 +141,17 @@
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    
+                    <div class="w-50 p-3">
+                        <strong>{{ __('contreq.account') }}</strong>
+                        <select id="accountid" class="form-select" name="accountid" value="{{ old('accountid') }}" class="form-control">
+                         <option value="" selected="selected">{{ __('contreq.account') }}</option>
+                         
+                        </select>
+                        
+                        @error('accountid')
+                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
+                        @enderror
+                    </div>
                     
                  <div class="row flex">
                     <div class="w-25 p-3">
@@ -173,6 +189,29 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('Error fetching categories: ', error);
+                }
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            // Use AJAX to fetch categories
+            $.ajax({
+                url: '/get-accounts3', // The route to fetch data
+                method: 'GET',
+                success: function(response) {
+                    // Clear existing options
+                    $('#accountid').empty();
+                    // Add a default option
+                    $('#accountid').append('<option value="">Select a account</option>');
+
+                    // Loop through the categories and append them to the select element
+                    $.each(response, function(index, account) {
+                        $('#accountid').append('<option value="' + account.id + '">' + account.name + '</option>');
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching accounts: ', error);
                 }
             });
         });

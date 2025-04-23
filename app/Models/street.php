@@ -9,5 +9,5 @@ class street extends Model
 {
     public $timestamps = false;
     protected $table = 'street';
-    protected $fillable=['name','enname'];
+    protected $fillable=['name','enname','cityid'];
 }

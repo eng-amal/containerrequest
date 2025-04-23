@@ -13,7 +13,7 @@
 }
 
 body {
-  font-family: "Open Sans", serif;
+  font-family: "Open Sans", sans-serif;
   line-height: 1.6;
   background-color: white;
   color: #444;
@@ -68,15 +68,16 @@ nav {
 }
 
 .sidebar {
-  overflow-y: scroll;
+  overflow-y: auto;  /* Allows scrolling when content exceeds the height */
+  height: 100vh;
   height: 100%;
   width: 350px;
   position: fixed;
-
+  transition: all 0.3s ease-in-out;
   /* left: 0; */
   background-color: #F5F5F5;
   color: #424242;
-
+  padding-top: 5px;
   &.rtl {
     right: 0;
   }
@@ -89,6 +90,12 @@ nav {
     margin: 10px;
   }
 }
+.sidenav {
+  display: flex;
+  flex-direction: column; /* Ensures the items are stacked vertically */
+  height: 100%;
+}
+
 
 .sidenav .home {
   display: flex;

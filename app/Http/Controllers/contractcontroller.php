@@ -12,6 +12,8 @@ use App\Models\paytype;
 use App\Models\contractpaytype;
 use App\Models\payperoid;
 use App\Models\invoice;
+use Carbon\Carbon;
+use TCPDF;
 class contractcontroller extends Controller
 {
     public function contractindex(Request $request)
@@ -213,4 +215,98 @@ class contractcontroller extends Controller
         return redirect()->route('contractindex');
     }
     
+    public function showcontractReport(Request $request)
+    {
+        // التحقق من صحة التاريخ المدخل
+        $request->validate([
+            
+            'tdate' => 'required|date',
+        ]);
+
+        // استلام التاريخ المدخل
+        
+        $tdate = Carbon::parse($request->input('tdate'))->format('Y-m-d');
+
+        // استعلام البيانات بناءً على تاريخ fromdate
+        $salesData = contract::where('fromdate', '<=', $tdate)  // العقد يبدأ قبل أو عند tdate
+        ->where('todate', '>=', $tdate)
+            ->join('container', 'contract.contnum', '=', 'container.id') // ربط مع جدول الحاويات
+            ->join('contractpaytype', 'contract.paytypeid', '=', 'contractpaytype.id')
+            ->join('containersize', 'contract.contsizeid', '=', 'containersize.id')
+            ->join('payperoid', 'contract.payperoidid', '=', 'payperoid.id') // ربط مع جدول السائقين
+            ->select(
+                'container.no as container_no',
+                'containersize.name as container_size',
+                'contract.cost as amount',
+                'contractpaytype.name as payment_method',
+                'payperoid.name as payperoid',
+                'contract.fromdate as fromdate',
+                'contract.todate as todate',
+                'contract.id as contract_no',
+                'contract.custname as customer_name'
+            )
+            ->get();
+
+        // إرسال البيانات إلى دالة توليد التقرير
+        $this->generatePDFSalesReport($salesData,$tdate);
+    }
+
+    public function generatePDFSalesReport($salesData,$tdate)
+    {
+        // إنشاء كائن TCPDF
+        $pdf = new TCPDF('L', PDF_UNIT, 'A4', true, 'UTF-8', false);
+
+        // إعدادات الوثيقة
+        $pdf->SetCreator(PDF_CREATOR);
+        $pdf->SetTitle('تقرير عقود ');
+        $pdf->SetFont('freeserif', '', 14);
+        $pdf->setRTL(true);
+
+        // إضافة صفحة
+        $pdf->AddPage();
+
+        // عنوان التقرير
+        $pdf->SetFont('freeserif', 'B', 16);
+        $pdf->Cell(0, 10, 'تقرير  عقود تاريخ  - ' .$tdate, 0, 1, 'C');
+
+        // إعداد الخط
+        $pdf->SetFont('freeserif', '', 12);
+        $pdf->Ln(10); // مسافة بين العنوان والمحتوى
+
+        // جدول المبيعات
+        $pdf->Cell(30, 10, 'رقم العقد', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'من تاريخ', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'الى تاريخ', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'رقم الحاوية', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'حجم الحاوية', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'المبلغ', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'طريقة السداد', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'وقت السداد', 1, 0, 'C');
+        $pdf->Cell(30, 10, 'اسم الزبون', 1, 1, 'C');
+        $pdf->SetFont('freeserif', '', 9);
+        // إضافة البيانات إلى الجدول
+        
+        foreach ($salesData as $data) {
+            $pdf->Cell(30, 10, $data->contract_no, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->fromdate, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->todate, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->container_no, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->container_size, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->amount, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->payment_method, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->payperoid, 1, 0, 'C');
+            $pdf->Cell(30, 10, $data->customer_name, 1, 1, 'C');
+             
+
+        }
+                // إخراج التقرير
+        $pdf->Output('contract_report.pdf', 'I');
+    }
+    
+    public function createcontractreport()
+    {
+            return view('createcontractreport');
+            
+        
+    }
 }

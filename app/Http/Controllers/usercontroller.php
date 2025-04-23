@@ -27,6 +27,7 @@ class usercontroller extends Controller
     $request->validate([
         'username' => 'required|unique:users,username', // Direct unique check
         'password' => 'required|min:6',
+        'role_id' =>'required',
         'empid'    => 'required|unique:users,empid',    // Direct unique check
     ]);
    // dd('Here');
@@ -35,6 +36,7 @@ class usercontroller extends Controller
         'username' => $request->username,
         'password' => Hash::make($request->password), // Hashing password
         'empid'    => $request->empid,
+        'role_id'  =>$request->role_id,
     ]);
 
     return redirect()->route('userindex')->with('success', 'User has been created successfully.');

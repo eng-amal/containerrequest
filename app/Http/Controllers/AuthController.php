@@ -26,7 +26,7 @@ class AuthController extends Controller
         ];
 
         if (Auth::attempt($credentials)) {
-            return redirect()->intended('/containerrequests');
+            return redirect()->intended('/home');
         }
 
         return back()->withErrors(['username' => 'Invalid credentials.'])->withInput();

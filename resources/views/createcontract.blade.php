@@ -87,9 +87,7 @@
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="w-25 p-3">
-                     <a href="javascript:void(0);" id="openModal">{{ __('contreq.addcust') }}</a>
-                    </div>
+                    
                    </div>
                     <div class="w-25 p-3">
                         <strong>{{ __('contreq.contsizeid') }}</strong>

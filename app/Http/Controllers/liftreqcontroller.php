@@ -20,6 +20,12 @@ use App\Models\liftreason;
 use App\Models\unliftreason;
 use App\Models\contlocation;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Illuminate\Support\Str;
+use Google_Client;
+use GuzzleHttp\Client;
+use Google\Service\FirebaseCloudMessaging;
+
 class liftreqcontroller extends Controller
 {
 
@@ -59,6 +65,12 @@ class liftreqcontroller extends Controller
         $cont->islift = 1;
         $cont->save();
     }
+        $newcont = container::find($cont->contid);
+        if ($newcont) {
+            $newcont->status = 3; // Set container status to full
+            $newcont->save();
+           
+        }
         return redirect()->route('showRequests')->with('success','containerrequestlift has been created successfully.');
     }
 
@@ -84,7 +96,7 @@ class liftreqcontroller extends Controller
         $containers = container::where('sizeid','=', $containerrequest->contsizeid)->get();
         $citys = city::all();  // Fetch all available containersize
         $streets = street::where('cityid','=', $containerrequest->cityid)->get();
-        $emps = employee::all();
+        $emps = employee::where('position_id',1)->get();
         $liftproritys=liftprority::all();
         $bldehs=bldeh::all();
         $liftreasons=liftreason::all();
@@ -124,18 +136,63 @@ class liftreqcontroller extends Controller
     public function send($id)
     {
         $request = liftreq::find($id);
-        if ($request) {
-            $request->status = 2;
-            $request->save();
-            return redirect()->back()->with('success', 'Request sent to driver');
-        }
 
-        return redirect()->back()->with('error', 'Request not found'); 
+        if (!$request) {
+            return redirect()->back()->with('error', 'Request not found');
+        }
+    
+        $empid = $request->empid;
+        $driver = Employee::find($empid);
+    
+        if (!$driver) {
+            return redirect()->back()->with('error', 'Request not sent, driver not found.');
+        }
+    
+        $today = Carbon::today()->toDateString();
+    
+        // Check if driver is on vacation today
+        $onVacation = DB::table('vacation')
+            ->where('empid', $empid)
+            ->whereDate('vacdate', '<=', $today)
+            ->whereRaw("DATE_ADD(vacdate, INTERVAL peroid DAY) > ?", [$today])
+            ->exists();
+    
+        if ($onVacation) {
+            return redirect()->back()->with('error', 'Cannot send request. Driver "' . $driver->fullname . '" is on vacation today.');
+        }
+    
+        $request->status = 2;
+        $request->save();
+    // ✅ Send FCM Notification
+    if (!$driver->fcm_token) {
+        return redirect()->back()->with('error', 'Driver does not have an FCM token.');
+    }
+    
+    try {
+        $this->sendFCMNotification($driver->fcm_token, 'New lift Request', 'You have a new container lift request assigned.');
+    } catch (\Exception $e) {
+        \Log::error("Failed to send FCM to {$driver->fullname}: " . $e->getMessage());
+        return redirect()->back()->with('error', 'Request saved, but failed to send notification.'. $e->getMessage());
+    }
+
+    return redirect()->back()->with('success', 'Request sent to driver ' . $driver->fullname);
+       
            
     }
     public function destroyfill($id)
     {
         $liftreq = liftreq::findOrFail($id);
+        $cont = containerrequest::find($liftreq->conreqid);
+    if ($cont) {
+        $cont->islift = 0;
+        $cont->save();
+    }
+        $newcont = container::find($cont->contid);
+        if ($newcont) {
+            $newcont->status = 1; // Set container status to full
+            $newcont->save();
+           
+        }
         $liftreq->delete();
         return redirect()->route('managefillreq');
     }
@@ -145,7 +202,7 @@ class liftreqcontroller extends Controller
         $liftreqs = DB::table('liftreq')
             ->join('containerrequest', 'liftreq.conreqid', '=', 'containerrequest.id')
             ->select('liftreq.id','liftreq.liftdate', 'liftreq.reqdate', 'liftreq.liftprorityid','containerrequest.custname', 'containerrequest.mobno')
-            ->where('liftreq.status', 3)
+            ->where('liftreq.status', 4)
             ->get();
 
         return view('comfillind', compact('liftreqs'));
@@ -156,7 +213,7 @@ class liftreqcontroller extends Controller
         $liftreqs = DB::table('liftreq')
             ->join('containerrequest', 'liftreq.conreqid', '=', 'containerrequest.id')
             ->select('liftreq.id','liftreq.liftdate', 'liftreq.reqdate', 'liftreq.liftprorityid','containerrequest.custname', 'containerrequest.mobno')
-            ->where('liftreq.status', 4)
+            ->where('liftreq.status', 5)
             ->get();
 
         return view('uncomfillind', compact('liftreqs'));
@@ -196,7 +253,7 @@ class liftreqcontroller extends Controller
     {
         $liftreq = liftreq::findOrFail($id);
        
-        $liftreq->status = 5;
+        $liftreq->status = 6;
        
         $liftreq->save();
         // Redirect back to the previous page
@@ -274,5 +331,41 @@ class liftreqcontroller extends Controller
         
         return view('uncompemptyreq',compact('liftreq','containerrequest','liftreasons','contlocations','unemptyreasons','bldehs','liftproritys','emps','containersizes','containers','citys','streets'));
     }
-
+    protected function sendFCMNotification($token, $title, $body)
+    {
+        $client = new Google_Client();
+        $client->setAuthConfig(storage_path('app/containerrequest-9e25b1d94c62.json'));
+        $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+        //$client->useApplicationDefaultCredentials();
+        $accessToken = $client->fetchAccessTokenWithAssertion()['access_token'];
+    
+        $projectId = env('FIREBASE_PROJECT_ID');
+        $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
+    
+        $http = new Client();
+    
+        $message = [
+            'message' => [
+                'token' => $token,
+                'notification' => [
+                    'title' => $title,
+                    'body' => $body,
+                ],
+                // Optional: add data for Flutter background handling
+                'data' => [
+                    'request_type' => 'job',
+                    'custom_id' => (string) Str::uuid(),
+                ],
+            ]
+        ];
+    
+        $http->post($url, [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $accessToken,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => $message,
+        ]);
+    }
+    
 }

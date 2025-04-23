@@ -100,11 +100,11 @@
                         <td>
                         @if($containerrequest->status == 1 || $containerrequest->status == 2)
                             <form action="{{ route('containerrequests.cancel',$containerrequest->id) }}" method="Post">
-                                <a class="btn" href="{{ route('containerrequests.edit',$containerrequest->id) }}">
+                                <a class="btn" title="edit" href="{{ route('containerrequests.edit',$containerrequest->id) }}">
                                 <img src="{{ asset('images/del.JPG') }}" alt="edit" width="30" height="30"> 
                                 </a>
                                 <!-- Send Button -->
-                               <a class="btn" href="{{ url('/containerrequests/send/' . $containerrequest->id) }}">
+                               <a class="btn" title="send to driver" href="{{ url('/containerrequests/send/' . $containerrequest->id) }}">
                                <img src="{{ asset('images/send.JPG') }}" alt="send to driver" width="30" height="30">
                               </a>
                               
@@ -122,6 +122,12 @@
                             <button type="submit" class="btn"> <img src="{{ asset('images/del1.JPG') }}" alt="Delete" width="30" height="30"></button>
                             </form>
                             @endif
+                            @if($containerrequest->status == 14)
+                            <a class="btn" title="complate" href="{{ route('comppending',$containerrequest->id) }}">
+                                <img src="{{ asset('images/process.JPG') }}" alt="update" width="30" height="30"> 
+                            </a>
+                            
+                            @endif
                         </td>
                     </tr>
                     @endforeach
@@ -133,4 +139,26 @@
 
   </main>
 </div>
+@endsection
+@section('scripts')
+  <!-- Main JS File -->
+  
+<script>
+        // Function to toggle the language between English and Arabic
+        function toggleLanguage() {
+            let currentLang = "{{ app()->getLocale() }}"; // Get current language (English or Arabic)
+            let newLang = currentLang === 'en' ? 'ar' : 'en'; // Toggle between English and Arabic
+
+            // Add the new language to the form as a hidden input
+            let form = document.getElementById('language-form');
+            let langInput = document.createElement('input');
+            langInput.type = 'hidden';
+            langInput.name = 'lang';
+            langInput.value = newLang;
+            form.appendChild(langInput);
+
+            // Submit the form to reload the page with the new language
+            form.submit();
+        }
+    </script>
 @endsection

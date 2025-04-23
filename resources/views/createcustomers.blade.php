@@ -64,6 +64,7 @@
                         <option value="0" {{ old('status') == 0 ? 'selected' : '' }}>{{ __('contreq.status1') }}</option>
                         <option value="1" {{ old('status') == 1 ? 'selected' : '' }}>{{ __('contreq.status2') }}</option>
                         <option value="2" {{ old('status') == 2 ? 'selected' : '' }}>{{ __('contreq.status3') }}</option>
+                        <option value="3" {{ old('status') == 3 ? 'selected' : '' }}>{{ __('contreq.status4') }}</option>
                         </select>
                         
                         @error('status')
@@ -78,6 +79,17 @@
                         @enderror
                     </div>
                    </div> 
+                   <div class="w-50 p-3">
+                        <strong>{{ __('contreq.account') }}</strong>
+                        <select id="accountid" class="form-select" name="accountid" value="{{ old('accountid') }}" class="form-control">
+                         <option value="" selected="selected">{{ __('contreq.account') }}</option>
+                         
+                        </select>
+                        
+                        @error('accountid')
+                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
+                        @enderror
+                    </div>
                  <div class="row flex">
                     <div class="w-25 p-3">
                     <button type="submit" class="btn btn-outline-primary">{{ __('contreq.submit') }}</button></div></div>
@@ -129,4 +141,28 @@
     // Run on page load in case status was pre-selected
     document.addEventListener("DOMContentLoaded", toggleBalanceField);
 </script>
+<script>
+        $(document).ready(function() {
+            // Use AJAX to fetch categories
+            $.ajax({
+                url: '/get-accounts3', // The route to fetch data
+                method: 'GET',
+                success: function(response) {
+                    // Clear existing options
+                    $('#accountid').empty();
+                    // Add a default option
+                    $('#accountid').append('<option value="">Select a account</option>');
+
+                    // Loop through the categories and append them to the select element
+                    $.each(response, function(index, account) {
+                        $('#accountid').append('<option value="' + account.id + '">' + account.name + '</option>');
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching accounts: ', error);
+                }
+            });
+        });
+    </script>
+
 @endsection

@@ -54,6 +54,7 @@
                         <option value="0" {{ $customer->status == 0 ? 'selected' : '' }}>{{ __('contreq.status1') }}</option>
                         <option value="1" {{ $customer->status == 1 ? 'selected' : '' }}>{{ __('contreq.status2') }}</option>
                         <option value="2" {{ $customer->status == 2 ? 'selected' : '' }}>{{ __('contreq.status3') }}</option>
+                        <option value="3" {{ $customer->status == 3 ? 'selected' : '' }}>{{ __('contreq.status4') }}</option>
                         </select>
                         
                         @error('status')
@@ -64,6 +65,21 @@
                         <strong>{{ __('contreq.balance') }}</strong>
                         <input type="text" name="balance"  value="{{ $customer->balance }}" class="form-control" placeholder="{{ __('contreq.balance') }}">
                         @error('balance')
+                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="w-25 p-3">
+                        <strong>{{ __('contreq.account') }}</strong>
+                        <select id="accountid" name="accountid" class="form-select">
+                         <option value="">{{ __('contreq.account') }}</option>
+                          @foreach ($accounts as $account)
+                          <option value="{{ $account->id }}" {{ $customer->accountid == $account->id ? 'selected' : '' }}>
+                        {{ $account->name }}
+                          </option>
+                         @endforeach
+                        </select>
+                        
+                        @error('accountid')
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>

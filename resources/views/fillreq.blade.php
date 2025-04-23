@@ -114,7 +114,13 @@
                         <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
                         @enderror
                     </div>
-                
+                    <div class="w-25 p-3">
+                        <strong>{{ __('contreq.fromdate') }}</strong>
+                        <input type="date" name="liftdate" id="liftdate" value="{{ old('liftdate') }}" class="form-control" placeholder="liftdate">
+                        @error('liftdate')
+                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
+                        @enderror
+                    </div>
                     <div class="w-25 p-3">
                         <strong>{{ __('contreq.empid') }}</strong>
                         <select id="empid" name="empid" value="{{ old('empid') }}" class="form-control">
@@ -144,13 +150,7 @@
                         @enderror
                     </div>
                 
-                    <div class="w-25 p-3">
-                        <strong>{{ __('contreq.fromdate') }}</strong>
-                        <input type="date" name="liftdate" value="{{ old('liftdate') }}" class="form-control" placeholder="liftdate">
-                        @error('liftdate')
-                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
-                        @enderror
-                    </div>
+                    
                 
                     <div class="w-25 p-3">
                         <strong>{{ __('contreq.location_url') }}</strong>
@@ -347,28 +347,36 @@ $(document).ready(function(){
         });
     </script>
     <script>
-        $(document).ready(function() {
-            // Use AJAX to fetch categories
-            $.ajax({
-                url: '/get-employees', // The route to fetch data
-                method: 'GET',
-                success: function(response) {
-                    // Clear existing options
-                    $('#empid').empty();
-                    // Add a default option
-                    $('#empid').append('<option value="">Select employee:</option>');
+    $(document).ready(function() {
+        // Trigger when the date changes
+        $('#liftdate').on('change', function() {
+            const fromDate = $(this).val();
 
-                    // Loop through the categories and append them to the select element
-                    $.each(response, function(index, employee) {
-                        $('#empid').append('<option value="' + employee.id + '">' + employee.fullname + '</option>');
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching employees: ', error);
-                }
-            });
+            if (fromDate) {
+                $.ajax({
+                    url: '/get-drivers',
+                    method: 'GET',
+                    data: { requestdate: fromDate }, // send it as query param
+                    success: function(response) {
+                        $('#empid').empty();
+                        $('#empid').append('<option value="">Select employee:</option>');
+
+                        $.each(response, function(index, employee) {
+                            $('#empid').append('<option value="' + employee.id + '">' + employee.fullname + '</option>');
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching employees: ', error);
+                    }
+                });
+            } else {
+                // If date is cleared, you might want to clear the dropdown
+                $('#empid').empty();
+                $('#empid').append('<option value="">Select employee:</option>');
+            }
         });
-    </script>
+    });
+</script>
     <script>
         $(document).ready(function() {
             // Use AJAX to fetch categories

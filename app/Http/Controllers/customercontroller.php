@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\customer;
+use App\Models\account;
+use Illuminate\Support\Facades\DB;
+use TCPDF;
 class customercontroller extends Controller
 {
     public function getcustomers(Request $request)
@@ -42,6 +45,7 @@ class customercontroller extends Controller
             'fullname' => 'required',
             'phone' => 'required|unique:customer',
             'whatappno' => 'required',
+            
             // Add other fields as necessary
         ]);
 
@@ -115,6 +119,7 @@ class customercontroller extends Controller
             'whatappno' => 'required',
             'status'=>'required',
             'balance'=>'nullable|digits_between:1,10',
+            'accountid' => 'required|digits_between:1,10',
             ]);
        
         customer::create($request->post());
@@ -122,8 +127,9 @@ class customercontroller extends Controller
     }
     public function customeredit($id)
     {
+        $accounts = account::all();
         $customer = customer::findOrFail($id);
-        return view('customeredit',compact('customer'));
+        return view('customeredit',compact('customer','accounts'));
     }
     public function customerupdate(Request $request,$id)
     {
@@ -133,6 +139,7 @@ class customercontroller extends Controller
             'whatappno' => 'required',
             'status'=>'required',
             'balance'=>'nullable|digits_between:1,10',
+            'accountid' => 'required|digits_between:1,10',
         ]);
         $customer->fill($request->post())->save();
         
@@ -144,4 +151,70 @@ class customercontroller extends Controller
         $customer->delete();
         return redirect()->route('customerindex')->with('success','customer Has Been deleted successfully');;
     }
+    
+    public function showcustomerReport() {
+        $customers = \DB::table('customer as a')
+        ->leftJoin('account as p', 'a.accountid', '=', 'p.id')
+        ->select(
+            'a.id',
+            'a.fullname',
+            'a.phone',
+            \DB::raw('
+                CASE 
+                    WHEN a.status = 0 THEN "نقدي"
+                    WHEN a.status = 1 THEN "اجل"
+                    WHEN a.status = 2 THEN "مدفوع مسبقا"
+                    WHEN a.status = 3 THEN "عقد"
+                    ELSE "-"
+                END as type_label
+            '),
+            'p.name', // parent name if exists
+            'p.balance'
+        )
+        ->get();
+        $this->generatePDFReport($customers);
+    }
+    public function generatePDFReport($customers) {
+        // إنشاء كائن TCPDF
+        $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);
+        
+        // إعدادات الوثيقة
+        $pdf->SetCreator(PDF_CREATOR);
+        $pdf->SetTitle('تقرير الزبائن');
+        $pdf->SetFont('freeserif', '', 14);
+        $pdf->setRTL(true);
+
+        // إضافة صفحة
+        $pdf->AddPage();
+    
+        // عنوان التقرير
+        $pdf->SetFont('freeserif', 'B', 16);
+        $pdf->Cell(0, 10, 'تقرير الزبائن ', 0, 1, 'C');
+    
+        // إعداد الخط
+        $pdf->SetFont('freeserif', '', 12);
+    
+        // إضافة محتويات التقرير
+        $pdf->Ln(10); // مسافة بين العنوان والمحتوى
+    
+        // جدول الحاويات
+        $pdf->Cell(40, 10, ' الاسم', 1, 0, 'C');
+        $pdf->Cell(40, 10, 'رقم الهاتف', 1, 0, 'C');
+        $pdf->Cell(40, 10, 'النوع', 1, 0, 'C'); // إضافة عمود المدينة والشارع
+        $pdf->Cell(40, 10, 'اسم الحساب', 1, 0, 'C');
+        $pdf->Cell(40, 10, 'رصيد', 1, 1, 'C');
+        $pdf->SetFont('freeserif', '', 8);
+        foreach ($customers as $customer) {
+            $pdf->Cell(40, 10, $customer->fullname, 1, 0, 'C');
+            $pdf->Cell(40, 10, $customer->phone, 1, 0, 'C');
+            $pdf->Cell(40, 10, $customer->type_label, 1, 0, 'C'); // المدينة والشارع
+            
+            $pdf->Cell(40, 10, $customer->name, 1, 0, 'C');
+            $pdf->Cell(40, 10, $customer->balance, 1, 1, 'C');
+        }
+    
+        // إخراج التقرير
+        $pdf->Output('customer_report.pdf', 'I');
+    }
+
 }

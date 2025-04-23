@@ -81,19 +81,19 @@
                         
                         <td >
                             <form action="{{ route('destroycontract',$contract->id) }}" method="Post">
-                                <a class="btn" href="{{ route('contractedit',$contract->id) }}">
+                                <a class="btn" title="edit" href="{{ route('contractedit',$contract->id) }}">
                                 <img src="{{ asset('images/del.JPG') }}" alt="edit" width="20" height="20"> 
                                 </a>
-                                <a class="btn" href="{{ route('invoiceindex', $contract->id) }}"> 
+                                <a class="btn" title="view invoice" href="{{ route('invoiceindex', $contract->id) }}"> 
                                 <img src="{{ asset('images/invoice1.JPG') }}" alt="view" width="20" height="20">
                                 </a>
                                 @if($contract->can_add_invoice)
                                 
-                                <a class=" btn {{$difference <= 10 && $contract->duedate ? 'row-warning' : '' }}"  href="{{ route('createinvoice', $contract->id) }}" > 
+                                <a title="add invoice" class=" btn {{$difference <= 10 && $contract->duedate ? 'row-warning' : '' }}"  href="{{ route('createinvoice', $contract->id) }}" > 
                                 <img src="{{ asset('images/invoice4.JPG') }}" alt="add" width="20" height="20">
                                 </a>
                                 @endif
-                                <a class="btn" href="{{ route('addcontractreq', $contract->id) }}"> 
+                                <a title="add request" class="btn" href="{{ route('addcontractreq', $contract->id) }}"> 
                                 <img src="{{ asset('images/cont1.JPG') }}" alt="view" width="20" height="20">
                                 </a>
                                 @csrf
@@ -113,4 +113,26 @@
 
   </main>
 </div>
+@endsection
+@section('scripts')
+  <!-- Main JS File -->
+  
+<script>
+        // Function to toggle the language between English and Arabic
+        function toggleLanguage() {
+            let currentLang = "{{ app()->getLocale() }}"; // Get current language (English or Arabic)
+            let newLang = currentLang === 'en' ? 'ar' : 'en'; // Toggle between English and Arabic
+
+            // Add the new language to the form as a hidden input
+            let form = document.getElementById('language-form');
+            let langInput = document.createElement('input');
+            langInput.type = 'hidden';
+            langInput.name = 'lang';
+            langInput.value = newLang;
+            form.appendChild(langInput);
+
+            // Submit the form to reload the page with the new language
+            form.submit();
+        }
+    </script>
 @endsection

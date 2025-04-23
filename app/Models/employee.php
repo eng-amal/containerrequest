@@ -9,5 +9,5 @@ class employee extends Model
 {
     public $timestamps = false;
     protected $table = 'employee';
-    protected $fillable=['empimg','mainsal','fullname','birthdate','nationality','hiredate','department_id','position_id','address','mobileno','enfullname'];
+    protected $fillable=['empimg','accountid','mainsal','fullname','birthdate','nationality','hiredate','department_id','position_id','address','mobileno','enfullname','employeeid'];
 }

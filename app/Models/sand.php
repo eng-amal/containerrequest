@@ -9,5 +9,5 @@ class sand extends Model
 {
     public $timestamps = false;
     protected $table = 'sand';
-    protected $fillable=['sanddate','saccountid','raccountid','amount','type'];
+    protected $fillable=['sanddate','saccountid','raccountid','amount','type','reason'];
 }

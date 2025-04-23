@@ -33,7 +33,7 @@
                         <td>{{ $liftreq->mobno }}</td>
                         <td>
                     <!-- Update Button -->
-                    <a class="btn" href="{{ route('uncompfillreq', $liftreq->id) }}"> <img src="{{ asset('images/del.JPG') }}" alt="edit" width="30" height="30"> 
+                    <a class="btn" title="update" href="{{ route('uncompfillreq', $liftreq->id) }}"> <img src="{{ asset('images/del.JPG') }}" alt="edit" width="30" height="30"> 
                    </a>
                    
                 </td>
@@ -48,4 +48,26 @@
   </main>
 
 </div>
+@endsection
+@section('scripts')
+  <!-- Main JS File -->
+  
+<script>
+        // Function to toggle the language between English and Arabic
+        function toggleLanguage() {
+            let currentLang = "{{ app()->getLocale() }}"; // Get current language (English or Arabic)
+            let newLang = currentLang === 'en' ? 'ar' : 'en'; // Toggle between English and Arabic
+
+            // Add the new language to the form as a hidden input
+            let form = document.getElementById('language-form');
+            let langInput = document.createElement('input');
+            langInput.type = 'hidden';
+            langInput.name = 'lang';
+            langInput.value = newLang;
+            form.appendChild(langInput);
+
+            // Submit the form to reload the page with the new language
+            form.submit();
+        }
+    </script>
 @endsection

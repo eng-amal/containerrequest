@@ -86,11 +86,21 @@
                         @enderror
                         <div id="error-message" style="color: red; display: none;"></div>
                     </div>
-                    
+                    <div class="w-25 p-3">
+                        <strong>{{ __('contreq.reason') }}</strong>
+                        <input type="text"  name="reason" id="reason" value="{{ old('reason') }}" id="reason" class="form-control" placeholder="{{ __('contreq.reason') }}">
+                        @error('reason')
+                        <div class="alert alert-danger mt-1 mb-1">{{ $message }}</div>
+                        @enderror
+                        <div id="error-message" style="color: red; display: none;"></div>
+                    </div>
                    <div class="row flex">
                     <div class="w-25 p-3">
-                    <button type="submit" class="btn btn-outline-primary">{{ __('contreq.submit') }}</button></div></div>
+                    <button type="submit" class="btn btn-outline-primary">{{ __('contreq.submit') }}</button></div>
             <!-- </div> -->
+            <div class="w-25 p-3">
+              <button type="button" class="btn btn-outline-secondary" id="generate-pdf">{{ __('contreq.repname') }}</button>
+            </div></div>
         </form>
     </div>
     </div><!-- /Starter Section Section -->
@@ -145,5 +155,24 @@
             });
         });
     </script>
-    
+    <script>
+    document.getElementById('generate-pdf').addEventListener('click', function () {
+        const type = document.getElementById('type').value;
+        const saccountid = document.getElementById('saccountid').value;
+        const amount = document.getElementById('amount').value;
+        if (!type || !saccountid) {
+            alert('يرجى اختيار نوع العملية والحساب أولاً');
+            return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+
+        // Construct the URL to your report generation route
+        const url = `/generate-report?type=${type}&amount=${amount}&saccountid=${saccountid}&date=${today}`;
+
+        // Open in a new tab
+        window.open(url, '_blank');
+    });
+</script>
+
 @endsection
